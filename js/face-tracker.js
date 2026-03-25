@@ -1,42 +1,36 @@
-/**
- * face-tracker.js v2.0
- * Трекинг лица: позиция, расстояние, история, визуализация
- */
-
 const FaceTracker = (() => {
-
   let detector = null;
   let isLoaded = false;
   let lastFaceBox = null;
   let positionHistory = [];
   let frameSkip = 0;
-  const FRAME_SKIP = 3; // Обрабатываем каждый 3й кадр для скорости
+  const FRAME_SKIP = 3;
 
   const POSITIONS = {
-    LEFT:   { label: 'ЛЕВЫЙ',   x: 0.25 },
-    CENTER: { label: 'ЦЕНТР',   x: 0.5  },
-    RIGHT:  { label: 'ПРАВЫЙ',  x: 0.75 },
+    LEFT: { label: "ЛЕВЫЙ", x: 0.25 },
+    CENTER: { label: "ЦЕНТР", x: 0.5 },
+    RIGHT: { label: "ПРАВЫЙ", x: 0.75 },
   };
 
   const DISTANCES = {
-    CLOSE:  'БЛИЗКО',
-    NORMAL: 'НОРМА',
-    FAR:    'ДАЛЕКО',
+    CLOSE: "БЛИЗКО",
+    NORMAL: "НОРМА",
+    FAR: "ДАЛЕКО",
   };
 
   async function load() {
     try {
       const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
       detector = await faceDetection.createDetector(model, {
-        runtime: 'tfjs',
+        runtime: "tfjs",
         maxFaces: 1,
-        modelType: 'short',
+        modelType: "short",
       });
       isLoaded = true;
-      console.log('[FaceTracker] Загружен');
+      console.log("[FaceTracker] Загружен");
       return true;
     } catch (err) {
-      console.warn('[FaceTracker] Не удалось загрузить:', err.message);
+      console.warn("[FaceTracker] Не удалось загрузить:", err.message);
       return false;
     }
   }
@@ -58,7 +52,6 @@ const FaceTracker = (() => {
       const box = face.box;
       const canvasW = videoEl.videoWidth;
 
-      // Зеркалим X (мы рисуем зеркально)
       const mirroredX = canvasW - box.xMin - box.width;
 
       lastFaceBox = {
@@ -70,25 +63,26 @@ const FaceTracker = (() => {
         cy: box.yMin + box.height / 2,
       };
 
-      // Определяем позицию
       const normX = lastFaceBox.cx / canvasW;
       const position = _getPosition(normX);
       const distance = _getDistance(box.width, canvasW);
 
       const entry = {
-        time: new Date().toLocaleTimeString('ru', { hour:'2-digit', minute:'2-digit', second:'2-digit' }),
+        time: new Date().toLocaleTimeString("ru", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
         position: position.label,
         distance,
         normX: normX.toFixed(2),
         faceW: Math.round(box.width),
       };
 
-      // Сохраняем в историю (максимум 50 записей)
       positionHistory.push(entry);
       if (positionHistory.length > 50) positionHistory.shift();
 
       return { box: lastFaceBox, position, distance, entry };
-
     } catch (err) {
       return null;
     }
@@ -102,41 +96,59 @@ const FaceTracker = (() => {
 
     ctx.save();
 
-    // Угловые маркеры стиль HUD
     const cornerLen = Math.min(box.w, box.h) * 0.25;
-    const x = box.x, y = box.y, w = box.w, h = box.h;
+    const x = box.x,
+      y = box.y,
+      w = box.w,
+      h = box.h;
 
-    ctx.strokeStyle = '#00e5ff';
+    ctx.strokeStyle = "#00e5ff";
     ctx.lineWidth = 2;
-    ctx.shadowColor = '#00e5ff';
+    ctx.shadowColor = "#00e5ff";
     ctx.shadowBlur = 10;
 
-    // Верхний левый
-    ctx.beginPath(); ctx.moveTo(x, y + cornerLen); ctx.lineTo(x, y); ctx.lineTo(x + cornerLen, y); ctx.stroke();
-    // Верхний правый
-    ctx.beginPath(); ctx.moveTo(x+w-cornerLen, y); ctx.lineTo(x+w, y); ctx.lineTo(x+w, y+cornerLen); ctx.stroke();
-    // Нижний левый
-    ctx.beginPath(); ctx.moveTo(x, y+h-cornerLen); ctx.lineTo(x, y+h); ctx.lineTo(x+cornerLen, y+h); ctx.stroke();
-    // Нижний правый
-    ctx.beginPath(); ctx.moveTo(x+w-cornerLen, y+h); ctx.lineTo(x+w, y+h); ctx.lineTo(x+w, y+h-cornerLen); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y + cornerLen);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x + cornerLen, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + w - cornerLen, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + cornerLen);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y + h - cornerLen);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x + cornerLen, y + h);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + w - cornerLen, y + h);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x + w, y + h - cornerLen);
+    ctx.stroke();
 
-    // Центральный прицел
-    const cx = x + w/2, cy = y + h/2;
-    ctx.strokeStyle = 'rgba(0,229,255,0.4)';
+    const cx = x + w / 2,
+      cy = y + h / 2;
+    ctx.strokeStyle = "rgba(0,229,255,0.4)";
     ctx.lineWidth = 0.5;
     ctx.shadowBlur = 0;
-    ctx.beginPath(); ctx.moveTo(cx-8, cy); ctx.lineTo(cx+8, cy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx, cy-8); ctx.lineTo(cx, cy+8); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, cy);
+    ctx.lineTo(cx + 8, cy);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 8);
+    ctx.lineTo(cx, cy + 8);
+    ctx.stroke();
 
-    // Метка позиции
     ctx.font = '9px "Orbitron", monospace';
-    ctx.fillStyle = '#00e5ff';
-    ctx.shadowColor = '#00e5ff';
+    ctx.fillStyle = "#00e5ff";
+    ctx.shadowColor = "#00e5ff";
     ctx.shadowBlur = 6;
-    ctx.fillText('ЛИЦО · ' + faceData.position.label, x, y - 8);
+    ctx.fillText("ЛИЦО · " + faceData.position.label, x, y - 8);
 
-    // Расстояние
-    ctx.fillStyle = 'rgba(0,229,255,0.7)';
+    ctx.fillStyle = "rgba(0,229,255,0.7)";
     ctx.shadowBlur = 0;
     ctx.fillText(faceData.distance, x, y + h + 14);
 
@@ -156,10 +168,15 @@ const FaceTracker = (() => {
     return DISTANCES.NORMAL;
   }
 
-  function getHistory() { return positionHistory; }
-  function getLastBox() { return lastFaceBox; }
-  function isReady() { return isLoaded; }
+  function getHistory() {
+    return positionHistory;
+  }
+  function getLastBox() {
+    return lastFaceBox;
+  }
+  function isReady() {
+    return isLoaded;
+  }
 
   return { load, detect, drawBox, getHistory, getLastBox, isReady };
-
 })();

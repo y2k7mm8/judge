@@ -1,10 +1,4 @@
-/**
- * recorder.js v2.0
- * Запись движений с метаданными
- */
-
 const Recorder = (() => {
-
   let isRecording = false;
   let frames = [];
   let events = [];
@@ -17,7 +11,7 @@ const Recorder = (() => {
     events = [];
     startTime = Date.now();
     frameCount = 0;
-    console.log('[Recorder] Запись начата');
+    console.log("[Recorder] Запись начата");
   }
 
   function stop() {
@@ -30,17 +24,18 @@ const Recorder = (() => {
     if (!isRecording) return;
     frameCount++;
 
-    // Пишем каждый 3й кадр чтобы не перегружать память
     if (frameCount % 3 !== 0) return;
 
     const entry = {
       t: Date.now() - startTime,
       score,
-      keypoints: pose ? pose.keypoints.map(kp => ({
-        x: Math.round(kp.x),
-        y: Math.round(kp.y),
-        s: parseFloat(kp.score.toFixed(2)),
-      })) : null,
+      keypoints: pose
+        ? pose.keypoints.map((kp) => ({
+            x: Math.round(kp.x),
+            y: Math.round(kp.y),
+            s: parseFloat(kp.score.toFixed(2)),
+          }))
+        : null,
     };
 
     if (faceData) {
@@ -75,7 +70,7 @@ const Recorder = (() => {
   function getExportData() {
     return {
       meta: {
-        version: '2.0',
+        version: "2.0",
         exportTime: new Date().toISOString(),
         duration: Date.now() - startTime,
         frameCount: frames.length,
@@ -88,20 +83,26 @@ const Recorder = (() => {
 
   function exportJSON() {
     const data = getExportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `ai-judge-record-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`;
+    a.download = `ai-judge-record-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   return {
-    start, stop,
-    recordFrame, addEvent,
-    getStats, exportJSON,
-    get isRecording() { return isRecording; },
+    start,
+    stop,
+    recordFrame,
+    addEvent,
+    getStats,
+    exportJSON,
+    get isRecording() {
+      return isRecording;
+    },
   };
-
 })();
