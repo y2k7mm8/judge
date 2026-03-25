@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>AI Judge — Pose Tracker v2.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- SCANLINE OVERLAY -->
+  <div class="scanlines"></div>
+  <div class="grid-bg"></div>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-mark">⚡</div>
+      <div class="logo-text">
+        <span class="logo-main">AI JUDGE</span>
+        <span class="logo-sub">POSE TRACKER v2.0</span>
+      </div>
+    </div>
+    <div class="header-center">
+      <div class="live-badge" id="live-badge">
+        <span class="live-dot"></span>
+        <span>LIVE</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="hud-clock" id="hud-clock">00:00:00</div>
+    </div>
+  </header>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-item" id="status-camera">
+      <span class="dot dot--off"></span>
+      <span class="label">КАМЕРА</span>
+    </div>
+    <div class="status-item" id="status-model">
+      <span class="dot dot--off"></span>
+      <span class="label">МОДЕЛЬ</span>
+    </div>
+    <div class="status-item" id="status-person">
+      <span class="dot dot--off"></span>
+      <span class="label">ТЕЛО</span>
+    </div>
+    <div class="status-item" id="status-face">
+      <span class="dot dot--off"></span>
+      <span class="label">ЛИЦО</span>
+    </div>
+    <div class="status-item">
+      <span class="stat-label">FPS</span>
+      <span id="fps-value" class="stat-value">--</span>
+    </div>
+    <div class="status-item position-item">
+      <span class="stat-label">ПОЗИЦИЯ</span>
+      <span id="player-position" class="stat-value position-val">--</span>
+    </div>
+    <div class="status-item score-box">
+      <span class="stat-label">ОЧКИ</span>
+      <span id="score-value" class="stat-value score-val">0</span>
+    </div>
+    <div class="status-item" id="rec-indicator" style="display:none">
+      <span class="rec-dot"></span>
+      <span class="label">REC</span>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="main-layout">
+
+    <!-- LEFT PANEL -->
+    <div class="side-panel side-panel--left">
+      <div class="panel-block">
+        <div class="panel-title">ПОЗИЦИЯ</div>
+        <div class="position-radar" id="position-radar">
+          <div class="radar-grid"></div>
+          <div class="radar-dot" id="radar-dot"></div>
+          <div class="radar-labels">
+            <span>Л</span><span>Ц</span><span>П</span>
+          </div>
+        </div>
+        <div class="position-text" id="position-text">Ожидание…</div>
+      </div>
+
+      <div class="panel-block">
+        <div class="panel-title">АКТИВНОСТЬ</div>
+        <div class="activity-bars" id="activity-bars">
+          <div class="activity-row">
+            <span>Руки</span>
+            <div class="bar-track"><div class="bar-fill" id="bar-arms"></div></div>
+          </div>
+          <div class="activity-row">
+            <span>Ноги</span>
+            <div class="bar-track"><div class="bar-fill" id="bar-legs"></div></div>
+          </div>
+          <div class="activity-row">
+            <span>Корпус</span>
+            <div class="bar-track"><div class="bar-fill" id="bar-body"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-block">
+        <div class="panel-title">СОБЫТИЯ</div>
+        <div class="event-log" id="event-log">
+          <div class="event-item event-item--system">Система готова</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANVAS AREA -->
+    <div class="canvas-area">
+      <div class="canvas-wrapper">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="output-canvas"></canvas>
+
+        <!-- CORNER DECORATIONS -->
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--tr"></div>
+        <div class="corner corner--bl"></div>
+        <div class="corner corner--br"></div>
+
+        <!-- FACE BOX OVERLAY -->
+        <canvas id="face-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+
+        <div class="overlay" id="loading-overlay">
+          <div class="loading-ring">
+            <svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="35" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="180 40" /></svg>
+          </div>
+          <p id="loading-text">Инициализация…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="side-panel side-panel--right">
+      <div class="panel-block">
+        <div class="panel-title">СЧЁТ</div>
+        <div class="score-display">
+          <div class="score-big" id="score-big">0</div>
+          <div class="score-combo" id="score-combo"></div>
+        </div>
+        <div class="score-breakdown">
+          <div class="score-row"><span>Удары</span><span id="sc-hits">0</span></div>
+          <div class="score-row"><span>Зоны</span><span id="sc-zones">0</span></div>
+          <div class="score-row"><span>Активность</span><span id="sc-activity">0</span></div>
+        </div>
+      </div>
+
+      <div class="panel-block">
+        <div class="panel-title">ЗАПИСЬ</div>
+        <div class="rec-stats">
+          <div class="rec-stat"><span>Кадров</span><span id="rec-frames">0</span></div>
+          <div class="rec-stat"><span>Длит.</span><span id="rec-duration">0с</span></div>
+          <div class="rec-stat"><span>Событий</span><span id="rec-events">0</span></div>
+        </div>
+      </div>
+
+      <div class="panel-block">
+        <div class="panel-title">ПРОФИЛЬ ЛИЦА</div>
+        <div class="face-profile" id="face-profile">
+          <div class="face-icon">👤</div>
+          <div class="face-info" id="face-info">Не обнаружено</div>
+          <div class="face-history" id="face-history"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="controls-row">
+      <button id="btn-start" class="btn btn--primary">▶ СТАРТ</button>
+      <button id="btn-stop" class="btn btn--danger" disabled>■ СТОП</button>
+      <button id="btn-record" class="btn btn--rec" disabled>⏺ ЗАПИСЬ</button>
+      <button id="btn-export" class="btn btn--secondary" disabled>⬇ ЭКСПОРТ</button>
+      <button id="btn-reset-score" class="btn btn--secondary">↺ СБРОС</button>
+    </div>
+    <div class="toggle-row">
+      <label class="toggle-label"><input type="checkbox" id="toggle-skeleton" checked />Скелет</label>
+      <label class="toggle-label"><input type="checkbox" id="toggle-keypoints" checked />Точки</label>
+      <label class="toggle-label"><input type="checkbox" id="toggle-labels" />Подписи</label>
+      <label class="toggle-label"><input type="checkbox" id="toggle-zones" checked />Зоны</label>
+      <label class="toggle-label"><input type="checkbox" id="toggle-face-box" checked />Лицо</label>
+      <label class="toggle-label"><input type="checkbox" id="toggle-trails" />След</label>
+      <label class="toggle-label"><input type="checkbox" id="toggle-score" checked />Счёт</label>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.17.0/dist/tf-backend-webgl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@1.0.2/dist/face-detection.min.js"></script>
+
+  <script src="js/skeleton.js"></script>
+  <script src="js/zones.js"></script>
+  <script src="js/face-tracker.js"></script>
+  <script src="js/recorder.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/pose-tracker.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
